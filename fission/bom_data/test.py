@@ -7,7 +7,7 @@ def main():
     df = pd.DataFrame.from_dict(data['observations']['data'])
     #print(df.head(15))
     #print(df)
-
+    
     return df
 
 main()
