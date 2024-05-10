@@ -20,11 +20,11 @@ def merge_data(data_dir):
             all_data_df = pd.concat([all_data_df, df], ignore_index=True)
     return all_data_df
 
-def process_homeless_data(dataframe):
+def process_homeless_data(data_dir):
+    dataframe = merge_data(data_dir)
     dataframe[' fin_yr'] = dataframe[' fin_yr'].str[:4]
     dataframe[' lga_name'] = dataframe[' lga_name'].astype(str)
     return process_homeless_data
-
 
 # Uplaod to Elastic Search
 def upload_es(index_name, data_dir):
@@ -49,6 +49,8 @@ def upload_es(index_name, data_dir):
 
 def main():
     upload_es('homeless', './data')
+    upload_es('crime', './data/crime')
+    upload_es('population', './data/region population/')
 
 if __name__ == '__main__':
     main()
