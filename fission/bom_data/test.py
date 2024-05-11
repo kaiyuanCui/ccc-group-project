@@ -107,16 +107,14 @@ def get_latest_data() -> pd.DataFrame:
     #print(df.head(15))
     #print(df)
 
-    
 
+   
 
 def main():
     file1 = open("log.txt", "w")
     L = ["Error LOG"]
     file1.writelines(L)
     file1.close()
-
-
 
     print("Getting new data")
     data = get_latest_data()
