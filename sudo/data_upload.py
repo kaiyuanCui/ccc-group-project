@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import requests
 
-INDEX_NAME = 'economy'
+INDEX_NAME = 'index'
 
 
 url = 'https://localhost:9200'
