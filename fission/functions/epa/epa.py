@@ -1,20 +1,25 @@
 import requests
 from elasticsearch8 import Elasticsearch
 import time
+import sys
+
+def config(k):
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
 
 def main():
     client = Elasticsearch (
-        'https://localhost:9200',
+        'https://elasticsearch-master.elastic.svc.cluster.local:9200',
         verify_certs= False,
         ssl_show_warn= False,
-        basic_auth=('elastic', 'elastic')
+        basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
     )
 
     url = "https://gateway.api.epa.vic.gov.au/environmentMonitoring/v1/sites/parameters?environmentalSegment=air"
     hdr ={
         # Request headers
         'Cache-Control': 'no-cache',
-        'X-API-Key': 'b3eecb57fa9046c090964ca6691113a0',
+        'X-API-Key': config('EPA_API_KEY'),
         'User-Agent': "Carlyly"
     }
 
@@ -32,6 +37,3 @@ def main():
         )
 
     return 'ok'
-
-if __name__ == '__main__':
-    main()

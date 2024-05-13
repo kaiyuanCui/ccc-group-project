@@ -1,7 +1,7 @@
 include:
 - ./functions/epa.zip
 kind: ArchiveUploadSpec
-name: functions-epa-zip-OoZz
+name: functions-epa-zip-XPsa
 
 ---
 apiVersion: fission.io/v1
@@ -19,7 +19,7 @@ spec:
   source:
     checksum: {}
     type: url
-    url: archive://functions-epa-zip-OoZz
+    url: archive://functions-epa-zip-XPsa
 status:
   buildstatus: pending
-  lastUpdateTimestamp: "2024-05-13T17:01:54Z"
+  lastUpdateTimestamp: "2024-05-13T19:20:40Z"

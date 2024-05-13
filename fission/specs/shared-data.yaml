@@ -6,3 +6,4 @@ metadata:
 data:
   ES_USERNAME: elastic
   ES_PASSWORD: elastic
+  EPA_API_KEY: b3eecb57fa9046c090964ca6691113a0
