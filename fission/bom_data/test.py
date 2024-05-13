@@ -11,7 +11,6 @@ STATIONS_LIST = './successes.csv'
 
 
 
-
 # Uplaod to Elastic Search
 def upload_es(index_name:str, data:pd.DataFrame) -> bool:
     # request settings:
