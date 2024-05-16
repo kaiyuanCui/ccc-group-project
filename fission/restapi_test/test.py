@@ -2,8 +2,8 @@ import json
 from elasticsearch8 import Elasticsearch, helpers
 import pandas as pd
 from flask import Flask, request, jsonify
-
-
+import requests
+from requests.exceptions import HTTPError, RequestException
 
 # Establish connection to Elasticsearch
 client = Elasticsearch(
@@ -29,16 +29,38 @@ def fetch_data_from_es(index_name, query):
         # Handle errors (e.g., index does not exist, connection issues)
         return pd.DataFrame()  # Return an empty DataFrame
 
+def get_homeless_data_from_api():
+    url = 'http://router.fission.svc.cluster.local:80/homeless'
+    
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+        
+     
+     
+       
+        try:
+            data = response.json()
+            return pd.DataFrame(data)
+        except ValueError as json_error:
+            
+            return pd.DataFrame()  
+
+    except HTTPError as http_err: # For local testing
+        print(f"HTTP error occurred: {http_err}")  
+    except RequestException as req_err:
+        print(f"Request error occurred: {req_err}")  
+    except Exception as err:
+        print(f"An error occurred: {err}") 
+
+    return pd.DataFrame()  
 
 def get_income_data():
     year = request.headers.get('X-Fission-Params-Year')
+
+
    
-    # Base query
-    query_homeless = {
-        "query": {
-            "match_all": {}
-        }
-    }
     
     query_income = {
         "query": {
@@ -48,15 +70,6 @@ def get_income_data():
 
     # Add year filter to the queries if year is specified
     if year:
-        query_homeless = {
-            "query": {
-                "bool": {
-                    "must": [
-                        {"term": {" fin_yr": year}}
-                    ]
-                }
-            }
-        }
         query_income = {
             "query": {
                 "bool": {
@@ -68,10 +81,12 @@ def get_income_data():
         }
     
     # Fetch data from Elasticsearch based on the queries
-    data_homeless = fetch_data_from_es('homeless', query_homeless)
+    data_homeless = get_homeless_data_from_api()
+ 
     data_income = fetch_data_from_es('income', query_income)
-
-    if year and data_homeless.empty and data_income.empty:
+   
+    
+    if year and data_income.empty:
         return jsonify({"message": f"No records found for the year {year}."}), 404
     
     try:
@@ -80,24 +95,29 @@ def get_income_data():
         data_income.columns = data_income.columns.str.strip()
 
         # Ensure the columns are the same type
-        data_homeless['fin_yr'] = data_homeless['fin_yr'].astype(str)
+        data_homeless['year'] = data_homeless['year'].astype(str)
         data_income['year'] = data_income['year'].astype(str)
         
         # Merge the DataFrames
-        df_merged = pd.merge(data_homeless, data_income, left_on=['lga_code', 'fin_yr'], right_on=['lga_code', 'year'], how='inner')
+        df_merged = pd.merge(data_homeless, data_income, left_on=['lga_code', 'year'], right_on=['lga_code', 'year'], how='inner')
 
-        df_merged.columns = df_merged.columns.str.strip()
+    
         # Convert the DataFrame to JSON
         
         df_json = df_merged.to_json(orient='records')
         
-        return jsonify(json.loads(df_json))
+        return df_json
     
     except Exception as e:
         # Handle errors (e.g., index does not exist, connection issues)
-        return jsonify({"error": str(e)})
+        return {"error": str(e)}
+
+
 
 def main():
-    return get_income_data()
+    data = get_income_data()
+    return data
 
+if __name__ == '__main__':
+    main()
 
