@@ -1,7 +1,7 @@
 import json
 from elasticsearch8 import Elasticsearch, helpers
 import pandas as pd
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, current_app
 import requests
 from requests.exceptions import HTTPError, RequestException
 
@@ -32,14 +32,10 @@ def fetch_data_from_es(index_name, query):
 def get_homeless_data_from_api():
     url = 'http://router.fission.svc.cluster.local:80/homeless'
     
-
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
         
-     
-     
-       
         try:
             data = response.json()
             return pd.DataFrame(data)
@@ -60,7 +56,6 @@ def get_income_data():
     year = request.headers.get('X-Fission-Params-Year')
 
 
-   
     
     query_income = {
         "query": {
@@ -103,7 +98,6 @@ def get_income_data():
 
     
         # Convert the DataFrame to JSON
-        
         df_json = df_merged.to_json(orient='records')
         
         return df_json
@@ -113,11 +107,54 @@ def get_income_data():
         return {"error": str(e)}
 
 
+def get_bom_data():
+     # Get query parameters from the request
+    params = request.args
 
-def main():
-    data = get_income_data()
-    return data
+    start_date = params.get('start_date')
+    end_date = params.get('end_date')
 
-if __name__ == '__main__':
-    main()
+    # Construct Elasticsearch query based on parameters
+    query = {"query": {"bool": {"must": []}}}
+    if start_date:
+        query["query"]["bool"]["must"].append({"range": {"local_date_time_full": {"gte": start_date}}})
+    if end_date:
+        query["query"]["bool"]["must"].append({"range": {"local_date_time_full": {"lte": end_date}}})
 
+        #TODO: update index
+    try:
+        
+        data = fetch_data_from_es('bom', query)
+    except Exception as e:
+        return {"error": str(e)}
+
+    json_data = data.to_json(orient='records')
+    # current_app.logger.info(f'{json_data}')
+    return json_data
+
+
+# def main():
+#     data = get_income_data()
+#     return data
+
+# if __name__ == '__main__':
+#     main()
+
+'''
+curl -XPUT -k 'https://127.0.0.1:9200/bom/_mapping'\
+   --header 'Content-Type: application/json'\
+   --data '{
+
+
+        "properties": {
+            "local_date_time_full": {
+                "type": "date",
+                "format": "yyyyMMddHHmmss"
+            }
+        }
+     
+}'\
+   --user 'elastic:elastic' | jq '.'
+
+
+'''

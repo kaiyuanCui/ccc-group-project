@@ -37,9 +37,6 @@ def get_homeless_data_from_api():
         response = requests.get(url)
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
         
-     
-     
-       
         try:
             data = response.json()
             return pd.DataFrame(data)

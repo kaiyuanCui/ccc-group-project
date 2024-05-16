@@ -7,3 +7,4 @@ fission package update --sourcearchive ./bom_data.zip\
   --env python-39\
   --name bom-data\
   --buildcmd './build.sh'
+  
