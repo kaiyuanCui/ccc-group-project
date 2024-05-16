@@ -28,9 +28,18 @@ def merge_data(data_dir):
         all_data_df[' lga_name'] = all_data_df[' lga_name'].astype(str)
     return all_data_df
 
+def process_homeless_data(data_dir):
+    dataframe = merge_data(data_dir)
+    dataframe[' fin_yr'] = dataframe[' fin_yr'].str[:4]
+    dataframe[' lga_name'] = dataframe[' lga_name'].astype(str)
+    return process_homeless_data
+
 # Uplaod to Elastic Search
 def upload_es(index_name, data_dir):
-    data = merge_data(data_dir)
+    if index_name == 'homeless':
+        data = process_homeless_data(data_dir)
+    else:
+        data = merge_data(data_dir)
     index_url = url + '/' + index_name + '/_doc'
     for index, row in data.iterrows():
         payload = row.to_dict()
@@ -47,7 +56,10 @@ def upload_es(index_name, data_dir):
     return True
 
 def main():
-    upload_es(INDEX_NAME, './data')
+    upload_es('homeless', './data')
+    upload_es('crime', './data/crime')
+    upload_es('population', './data/region population/')
+    # upload_es(INDEX_NAME, './data')
 
 if __name__ == '__main__':
     main()
