@@ -1,2 +1,2 @@
 elasticsearch8==8.11.0
-Flask==2.0.1
+pandas==2.2.2
