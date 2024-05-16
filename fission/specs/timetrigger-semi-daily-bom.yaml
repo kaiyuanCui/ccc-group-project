@@ -1,0 +1,11 @@
+apiVersion: fission.io/v1
+kind: TimeTrigger
+metadata:
+  creationTimestamp: null
+  name: semi-daily-bom
+spec:
+  cron: '@every 12h'
+  functionref:
+    functionweights: null
+    name: get-latest-bom
+    type: name
