@@ -2,7 +2,7 @@ apiVersion: fission.io/v1
 kind: Function
 metadata:
   creationTimestamp: null
-  name: get-crime-data
+  name: get-bom-data
 spec:
   InvokeStrategy:
     ExecutionStrategy:
@@ -22,7 +22,7 @@ spec:
   functionTimeout: 60
   idletimeout: 120
   package:
-    functionName: api.get_processed_crime
+    functionName: api.get_bom_data
     packageref:
       name: api
       namespace: ""

@@ -14,7 +14,7 @@ requests.packages.urllib3.disable_warnings()
 GLOBAL API SETTINGS:
 
 '''
-LOCAL_DEV = True
+LOCAL_DEV = False
 ES_URL = 'https://localhost:9200' if LOCAL_DEV else 'https://elasticsearch-master.elastic.svc.cluster.local:9200'
 EMPTY_QUERY = {
         "query": {
@@ -22,13 +22,20 @@ EMPTY_QUERY = {
         }
     }
 
+def config(k):
+   
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
+
 # Establish connection to Elasticsearch
 client = Elasticsearch(
     ES_URL,
     verify_certs=False,
     ssl_show_warn=False,
-    basic_auth=('elastic', 'elastic')
+    basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
 )
+
+
 
 '''
 
@@ -390,9 +397,44 @@ def get_processed_crime():
 
 '''
 
-
+POST REQUESTS:
 
 '''
+
+def post_data():
+    data = None
+    if not LOCAL_DEV:
+        data = request.json
+    else:
+        # local test data
+        data = {
+            'index_name': 'economy',
+            'data': {}
+        }
+
+    
+    print(data)
+    if not LOCAL_DEV:
+        current_app.logger.info(f'{data}')
+    try:
+        index_name = data['index_name']
+        payload = data['data']
+        index_url = ES_URL + '/' + index_name + '/_doc'
+        headers = {'Content-Type': 'application/json'}
+        auth = (config('ES_USERNAME'), config('ES_PASSWORD'))
+        verify_ssl = False
+        try:
+            response = requests.post(index_url, json=payload, headers=headers, auth=auth, verify=verify_ssl)
+            print(f'Status Code: {response.status_code}')
+            print(response.json())
+            if not LOCAL_DEV:
+                current_app.logger.info(f'{response.json()}')
+            return jsonify({"OK": f"OK"}), 200
+        except requests.exceptions.RequestException as error:
+            return jsonify({"error": f"{error}"}), 400
+       
+    except Exception as e:
+        return jsonify({"error": f"{e}"}), 400
 
 
 
@@ -404,3 +446,14 @@ if __name__ == '__main__':
     get_epa_data()
 
 
+'''
+
+curl -X 'POST' \
+  "http://127.0.0.1:9090/post-data"  \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "index": 'economy', 
+  "data": {}
+}'
+'''
