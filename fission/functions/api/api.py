@@ -14,7 +14,7 @@ requests.packages.urllib3.disable_warnings()
 GLOBAL API SETTINGS:
 
 '''
-RESULT_SIZE = 999
+DEFAULT_RESULT_SIZE = 999
 LOCAL_DEV = True
 ES_URL = 'https://localhost:9200' if LOCAL_DEV else 'https://elasticsearch-master.elastic.svc.cluster.local:9200'
 EMPTY_QUERY = {
@@ -46,7 +46,7 @@ Elastic Search helper functions
 
 '''
 
-def hits_from_es(index_name, query, from_last= False):
+def hits_from_es(index_name, query, from_last= False, limit=DEFAULT_RESULT_SIZE):
     '''
     return the 'hits' section of the raw response from Elastic Search
     
@@ -57,15 +57,15 @@ def hits_from_es(index_name, query, from_last= False):
         if from_last:
             response = client.count(index=index_name)
             total_docs = response['count']
-            start_from = max(0, total_docs - RESULT_SIZE)
+            start_from = max(0, total_docs - DEFAULT_RESULT_SIZE)
             
-            last_response = client.search(index=index_name, body=query, from_=start_from, size=RESULT_SIZE)
+            last_response = client.search(index=index_name, body=query, from_=start_from, size=limit)
             print(last_response)
             return last_response['hits']['hits']
 
         # Fetch all documents from the index based on the query
         else:
-            response = client.search(index=index_name, body=query, size=RESULT_SIZE)
+            response = client.search(index=index_name, body=query, size=limit)
             if LOCAL_DEV:
                 print("")
             return response['hits']['hits']
@@ -172,13 +172,6 @@ def clean_population_data(dataframe):
     }, inplace=True)
     #print(wide_format.head())
     return wide_format
-    
-
-'''
-
-API ENDPOINTS
-
-'''
 
 def clean_homeless_data(homeless):
     print("Cleaning data...")
@@ -236,6 +229,39 @@ def clean_homeless_data(homeless):
     pivot_homeless_df['total'] = pivot_homeless_df[['at_risk', 'homeless', 'not_state']].sum(axis=1)
 
     return pivot_homeless_df
+
+
+
+# common parameters to help with limiting the returned data size
+def get_data_limit_params(params):
+
+    try:
+        
+        from_last = params.get('from-last')
+        from_last = json.loads(from_last) # attempt to convert to bool
+        assert isinstance(from_last, bool)
+    except Exception as e:
+        from_last = False
+        print(e)
+
+    try:
+        
+        limit = params.get('limit')
+        limit = json.loads(limit) # attempt to convert to int
+        assert isinstance(from_last, int)
+    except Exception as e:
+        limit = DEFAULT_RESULT_SIZE
+        print(e)
+
+    return from_last,limit
+    
+
+'''
+
+API ENDPOINTS
+
+'''
+
 
 
 
@@ -396,11 +422,21 @@ def get_bom_data():
 
 
 def get_geodata():
-    hits = hits_from_es('geodata', EMPTY_QUERY)
-   
+
+    params = {}
+    if not LOCAL_DEV:
+        params = request.args
+    from_last, limit = get_data_limit_params(params)
+    
+
+
+    hits = hits_from_es('geodata', EMPTY_QUERY, from_last, limit)
+    #print(hits)
     data = [hit['_source'] for hit in hits]
     json_str = json.dumps(data)
     return json_str
+
+
 
 def get_epa_data():
     if not LOCAL_DEV:
@@ -408,14 +444,15 @@ def get_epa_data():
 
         start_date = params.get('start')
         end_date = params.get('end')
+        from_last, limit = get_data_limit_params(params)
     else: 
         start_date, end_date = (None, None)
-        
+        from_last, limit = get_data_limit_params({})
         # some test dates
         # start_date = '2023-05-17T06:00:00Z'
         # end_date = '2024-05-18T07:00:00Z'
 
-    from_last = True
+
         
     # Construct Elasticsearch query based on parameters
     query = {
@@ -450,9 +487,8 @@ def get_epa_data():
     try:
         print(query)
 
-        # WARNING?!!!!!!!: IF REVERSED ONLY WORKS FOR THE LAST RESULT_SIZE DOCS
-        # ATTEMPTING TO QUERY DATA BEFORE THIS WILL RESULT IN AN EMPTY LIST
-        hits = hits_from_es('epa', query, from_last=from_last)
+
+        hits = hits_from_es('epa', query, from_last=from_last, limit=limit)
         hits_json = json.dumps(hits)
         print(hits_json)
     except Exception as e:
@@ -469,6 +505,7 @@ def get_epa_data():
 
 
 def get_processed_pop():
+    
     try:
         data = dataframe_from_es('population', EMPTY_QUERY)
         #print(data.head())
@@ -539,7 +576,7 @@ def post_data():
 #     return data
 
 if __name__ == '__main__':
-    print(get_homeless_data())
+    print(get_epa_data())
 
 
 '''
