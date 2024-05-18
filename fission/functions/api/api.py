@@ -14,7 +14,8 @@ requests.packages.urllib3.disable_warnings()
 GLOBAL API SETTINGS:
 
 '''
-LOCAL_DEV = False
+RESULT_SIZE = 999
+LOCAL_DEV = True
 ES_URL = 'https://localhost:9200' if LOCAL_DEV else 'https://elasticsearch-master.elastic.svc.cluster.local:9200'
 EMPTY_QUERY = {
         "query": {
@@ -23,6 +24,8 @@ EMPTY_QUERY = {
     }
 
 def config(k):
+    if LOCAL_DEV:
+        return 'elastic'
    
     with open(f'/configs/default/shared-data/{k}', 'r') as f:
         return f.read()
@@ -43,17 +46,29 @@ Elastic Search helper functions
 
 '''
 
-def hits_from_es(index_name, query):
+def hits_from_es(index_name, query, from_last= False):
     '''
     return the 'hits' section of the raw response from Elastic Search
     
     '''
+    print(query)
+    print(index_name)
     try:
+        if from_last:
+            response = client.count(index=index_name)
+            total_docs = response['count']
+            start_from = max(0, total_docs - RESULT_SIZE)
+            
+            last_response = client.search(index=index_name, body=query, from_=start_from, size=RESULT_SIZE)
+            print(last_response)
+            return last_response['hits']['hits']
+
         # Fetch all documents from the index based on the query
-        response = client.search(index=index_name, body=query)
-        if LOCAL_DEV:
-            print("")
-        return response['hits']['hits']
+        else:
+            response = client.search(index=index_name, body=query, size=RESULT_SIZE)
+            if LOCAL_DEV:
+                print("")
+            return response['hits']['hits']
     
     except Exception as e:
         # Handle errors (e.g., index does not exist, connection issues)
@@ -164,6 +179,83 @@ def clean_population_data(dataframe):
 API ENDPOINTS
 
 '''
+
+def clean_homeless_data(homeless):
+    print("Cleaning data...")
+    homeless = homeless.fillna(0)
+    transformed_data = []
+
+    for column in homeless.columns:
+        if column not in [' fin_yr', ' lga_name', ' lga_code']:
+            parts = column.split('_')
+            if 'homeless' in column:
+                type = 'homeless'
+            elif 'at_risk' in column:
+                type = 'at_risk'
+            elif 'ns' in column:
+                type = 'not_state'
+
+            if 'm' in parts:
+                gender = 'Male'
+            elif 'f' in parts:
+                gender = 'Female'
+            
+            if '0_9' in column:
+                age_group = '0-9'
+            elif '10_19' in column:
+                age_group = '10-19'
+            elif '20_29' in column:
+                age_group = '20-29'
+            elif '30_39' in column:
+                age_group = '30-39'
+            elif '40_49' in column:
+                age_group = '40-49'
+            elif '50_59' in column:
+                age_group = '50-59'
+            elif '60_plus' in column:
+                age_group = '60+'
+            elif 'np' in column:
+                age_group = 'not_provide'
+            for index, value in homeless[column].items():
+                row_data = {
+                    'year': homeless[' fin_yr'][index],
+                    'lga_name': homeless[' lga_name'][index],
+                    'lga_code': homeless[' lga_code'][index],
+                    'age_group': age_group,
+                    'gender': gender,
+                    'homeless_type': type,
+                    'count': int(value)
+                }
+                transformed_data.append(row_data)
+
+    transformed_df = pd.DataFrame(transformed_data)
+    type_group_sum = transformed_df.groupby(['year', 'lga_name', 'lga_code', 'homeless_type'])['count'].sum().reset_index()
+    type_group_sum.columns = ['year', 'lga_name', 'lga_code', 'homeless_type', 'total_count']
+    pivot_homeless_df = type_group_sum.pivot_table(index=['year', 'lga_name', 'lga_code'], columns='homeless_type', values='total_count', aggfunc='first', fill_value=0)
+    pivot_homeless_df.reset_index(inplace=True)
+    pivot_homeless_df['total'] = pivot_homeless_df[['at_risk', 'homeless', 'not_state']].sum(axis=1)
+
+    return pivot_homeless_df
+
+
+
+def get_homeless_data():
+   
+    query = {
+        "query": {
+            "match_all": {}
+        }
+    }
+    raw_data = dataframe_from_es('homeless', query)
+    if raw_data.empty:
+     
+        return
+
+    clean_data = clean_homeless_data(raw_data)
+    
+    
+  
+    return clean_data.to_json(orient='records')
 
 
 def get_homeless_data_from_api():
@@ -320,10 +412,10 @@ def get_epa_data():
         start_date, end_date = (None, None)
         
         # some test dates
-        start_date = '2024-05-12T06:00:00Z'
-        end_date = '2024-05-12T07:00:00Z'
+        # start_date = '2023-05-17T06:00:00Z'
+        # end_date = '2024-05-18T07:00:00Z'
 
-        
+    from_last = True
         
     # Construct Elasticsearch query based on parameters
     query = {
@@ -334,6 +426,7 @@ def get_epa_data():
     }
 
     if start_date or end_date:
+        from_last = False
         query["query"]=  {
            
              "bool": {
@@ -355,8 +448,11 @@ def get_epa_data():
         if end_date:
             query["query"]["bool"]["must"][0]["range"]["parameters.timeSeriesReadings.readings.since"]["lte"] =  end_date
     try:
-        #print(query)
-        hits = hits_from_es('epa', query)
+        print(query)
+
+        # WARNING?!!!!!!!: IF REVERSED ONLY WORKS FOR THE LAST RESULT_SIZE DOCS
+        # ATTEMPTING TO QUERY DATA BEFORE THIS WILL RESULT IN AN EMPTY LIST
+        hits = hits_from_es('epa', query, from_last=from_last)
         hits_json = json.dumps(hits)
         print(hits_json)
     except Exception as e:
@@ -443,7 +539,7 @@ def post_data():
 #     return data
 
 if __name__ == '__main__':
-    get_epa_data()
+    print(get_homeless_data())
 
 
 '''
