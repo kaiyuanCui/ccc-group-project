@@ -2,14 +2,7 @@ import os
 import pandas as pd
 import requests
 
-INDEX_NAME = 'index'
-
-
-url = 'https://localhost:9200'
 headers = {'Content-Type': 'application/json'}
-auth = ('elastic', 'elastic')
-requests.packages.urllib3.disable_warnings()
-verify_ssl = False
 
 # Process Homeless Data
 def merge_data(data_dir):
@@ -36,19 +29,24 @@ def process_homeless_data(data_dir):
 
 # Uplaod to Elastic Search
 def upload_es(index_name, data_dir):
+    URL = 'http://127.0.0.1:9090/post-data'
     if index_name == 'homeless':
         data = process_homeless_data(data_dir)
     else:
         data = merge_data(data_dir)
-    index_url = url + '/' + index_name + '/_doc'
     for index, row in data.iterrows():
         payload = row.to_dict()
 
         for key in payload:
             if pd.isna(payload[key]):
                 payload[key] = None
+    
+        wrapped_payload = {
+            'index_name': index_name,
+            'data': payload
+        }
         try:
-            response = requests.post(index_url, json=payload, headers=headers, auth=auth, verify=verify_ssl)
+            response = requests.post(URL, json=wrapped_payload, headers=headers)
             print(f'Status Code: {response.status_code}')
             print(response.json())
         except requests.exceptions.RequestException as error:
@@ -59,7 +57,6 @@ def main():
     upload_es('homeless', './data')
     upload_es('crime', './data/crime')
     upload_es('population', './data/region population/')
-    # upload_es(INDEX_NAME, './data')
 
 if __name__ == '__main__':
     main()
