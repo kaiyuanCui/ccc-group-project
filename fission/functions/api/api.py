@@ -15,7 +15,7 @@ GLOBAL API SETTINGS:
 
 '''
 DEFAULT_RESULT_SIZE = 999
-LOCAL_DEV = True
+LOCAL_DEV = False
 ES_URL = 'https://localhost:9200' if LOCAL_DEV else 'https://elasticsearch-master.elastic.svc.cluster.local:9200'
 EMPTY_QUERY = {
         "query": {
@@ -57,7 +57,7 @@ def hits_from_es(index_name, query, from_last= False, limit=DEFAULT_RESULT_SIZE)
         if from_last:
             response = client.count(index=index_name)
             total_docs = response['count']
-            start_from = max(0, total_docs - DEFAULT_RESULT_SIZE)
+            start_from = max(0, total_docs - limit)
             
             last_response = client.search(index=index_name, body=query, from_=start_from, size=limit)
             print(last_response)
