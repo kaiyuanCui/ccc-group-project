@@ -46,7 +46,7 @@ Elastic Search helper functions
 
 '''
 
-def hits_from_es(index_name, query, from_last= False, limit=DEFAULT_RESULT_SIZE):
+def hits_from_es(index_name, query, from_last= 0, limit=DEFAULT_RESULT_SIZE):
     '''
     return the 'hits' section of the raw response from Elastic Search
     
@@ -54,20 +54,22 @@ def hits_from_es(index_name, query, from_last= False, limit=DEFAULT_RESULT_SIZE)
     print(query)
     print(index_name)
     try:
-        if from_last:
+        if from_last != 0:
             response = client.count(index=index_name)
             total_docs = response['count']
-            start_from = max(0, total_docs - limit)
+            start_from = max(0, total_docs - from_last)
             
             last_response = client.search(index=index_name, body=query, from_=start_from, size=limit)
-            print(last_response)
+            #print(last_response)
             return last_response['hits']['hits']
 
         # Fetch all documents from the index based on the query
         else:
             response = client.search(index=index_name, body=query, size=limit)
+           
             if LOCAL_DEV:
-                print("")
+                
+                print(response)
             return response['hits']['hits']
     
     except Exception as e:
@@ -236,12 +238,11 @@ def clean_homeless_data(homeless):
 def get_data_limit_params(params):
 
     try:
-        
         from_last = params.get('from-last')
-        from_last = json.loads(from_last) # attempt to convert to bool
-        assert isinstance(from_last, bool)
+        from_last = json.loads(from_last) # attempt to convert to int
+        assert isinstance(from_last, int)
     except Exception as e:
-        from_last = False
+        from_last = 0
         print(e)
 
     try:
@@ -267,12 +268,8 @@ API ENDPOINTS
 
 def get_homeless_data():
    
-    query = {
-        "query": {
-            "match_all": {}
-        }
-    }
-    raw_data = dataframe_from_es('homeless', query)
+
+    raw_data = dataframe_from_es('homeless', EMPTY_QUERY)
     if raw_data.empty:
      
         return
@@ -284,31 +281,34 @@ def get_homeless_data():
     return clean_data.to_json(orient='records')
 
 
-def get_homeless_data_from_api():
-    url = 'http://router.fission.svc.cluster.local:80/homeless'
+# def get_homeless_data_from_api():
+#     url = 'http://router.fission.svc.cluster.local:80/homeless'
     
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+#     try:
+#         response = requests.get(url)
+#         response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
         
-        try:
-            data = response.json()
-            return pd.DataFrame(data)
-        except ValueError as json_error:
+#         try:
+#             data = response.json()
+#             return pd.DataFrame(data)
+#         except ValueError as json_error:
             
-            return pd.DataFrame()  
+#             return pd.DataFrame()  
 
-    except HTTPError as http_err: # For local testing
-        print(f"HTTP error occurred: {http_err}")  
-    except RequestException as req_err:
-        print(f"Request error occurred: {req_err}")  
-    except Exception as err:
-        print(f"An error occurred: {err}") 
+#     except HTTPError as http_err: # For local testing
+#         print(f"HTTP error occurred: {http_err}")  
+#     except RequestException as req_err:
+#         print(f"Request error occurred: {req_err}")  
+#     except Exception as err:
+#         print(f"An error occurred: {err}") 
 
-    return pd.DataFrame()  
+#     return pd.DataFrame()  
 
 def get_income_data():
-    year = request.headers.get('X-Fission-Params-Year')
+    if not LOCAL_DEV:
+        year = request.headers.get('X-Fission-Params-Year')
+    else:
+        year = 2016
     query_income = {
         "query": {
             "match_all": {}
@@ -326,10 +326,24 @@ def get_income_data():
                 }
             }
         }
+        query_homeless = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"term": {' fin_yr': year}}
+                    ]
+                }
+            }
+        }
     
     # Fetch data from Elasticsearch based on the queries
-    data_homeless = get_homeless_data_from_api()
- 
+    #data_homeless = get_homeless_data_from_api()
+    raw_homeless = dataframe_from_es('homeless', query_homeless)
+    if raw_homeless.empty:
+        return jsonify({"message": f"No homeless records found for the year {year}."}), 404
+
+    
+    data_homeless = clean_homeless_data(raw_homeless)
     data_income = dataframe_from_es('income', query_income)
    
     
@@ -429,12 +443,14 @@ def get_geodata():
     from_last, limit = get_data_limit_params(params)
     
 
-
-    hits = hits_from_es('geodata', EMPTY_QUERY, from_last, limit)
-    #print(hits)
-    data = [hit['_source'] for hit in hits]
-    json_str = json.dumps(data)
-    return json_str
+    try:
+        hits = hits_from_es('geodata', EMPTY_QUERY, from_last, limit)
+        #print(hits)
+        data = [hit['_source'] for hit in hits]
+        json_str = json.dumps(data)
+        return json_str
+    except Exception as e:
+        return jsonify({"error": f"{e}"}), 500
 
 
 
@@ -576,7 +592,7 @@ def post_data():
 #     return data
 
 if __name__ == '__main__':
-    print(post_data())
+    print(get_income_data())
 
 
 '''
