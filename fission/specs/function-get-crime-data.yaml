@@ -2,7 +2,7 @@ apiVersion: fission.io/v1
 kind: Function
 metadata:
   creationTimestamp: null
-  name: get-latest-bom
+  name: get-crime-data
 spec:
   InvokeStrategy:
     ExecutionStrategy:
@@ -13,15 +13,18 @@ spec:
       TargetCPUPercent: 0
     StrategyType: execution
   concurrency: 500
+  configmaps:
+  - name: shared-data
+    namespace: ""
   environment:
-    name: python
+    name: python-39
     namespace: ""
   functionTimeout: 60
   idletimeout: 120
   package:
-    functionName: get_data.main
+    functionName: api.get_processed_crime
     packageref:
-      name: bom-data
+      name: api
       namespace: ""
   requestsPerPod: 1
   resources: {}
