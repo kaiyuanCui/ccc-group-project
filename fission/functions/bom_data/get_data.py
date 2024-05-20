@@ -1,5 +1,5 @@
 import json, requests
-
+from elasticsearch8 import Elasticsearch, helpers
 import pandas as pd
 import requests
 from flask import current_app, request
@@ -7,11 +7,75 @@ from pathlib import Path
 from io import StringIO
 
 INDEX_NAME = 'bom'
-IS_LOCAL = True
+LOCAL_DEV = False
 UPLOAD = True
 #BASE_PATH = Path(__file__).parent
 #STATIONS_LIST = (BASE_PATH /'stations_list.csv').resolve()
 
+ES_URL = 'https://localhost:9200' if LOCAL_DEV else 'https://elasticsearch-master.elastic.svc.cluster.local:9200'
+EMPTY_QUERY = {
+        "query": {
+            "match_all": {}
+        }
+    }
+
+def config(k):
+    if LOCAL_DEV:
+        return 'elastic'
+   
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
+
+# Establish connection to Elasticsearch
+client = Elasticsearch(
+    ES_URL,
+    verify_certs=False,
+    ssl_show_warn=False,
+    basic_auth=(config('ES_USERNAME'), config('ES_PASSWORD'))
+)
+
+
+def scan_from_es(index_name, query):
+    '''
+    return the response from Elastic Search as an Iterable[Dict[str, Any]]
+    
+    '''
+    try:
+        # Fetch all documents from the index based on the query
+        response = helpers.scan(client, index=index_name, query=query)
+        return response
+    
+    except Exception as e:
+        # Handle errors (e.g., index does not exist, connection issues)
+        return {"error": str(e)}  # Return an empty DataFrame
+
+
+def dataframe_from_es(index_name, query):
+    '''
+    return the response from Elastic Search as a pandas dataframe
+    
+    '''
+    try:
+        # Fetch all documents from the index based on the query
+        #response = helpers.scan(client, index=index_name, query=query)
+
+        response = scan_from_es(index_name, query)
+        docs = list(response)
+        
+        # Extract the _source field from each document
+        data = [doc['_source'] for doc in docs]
+        
+        df = pd.DataFrame(data)
+        return df
+    
+    except Exception as e:
+        # Handle errors (e.g., index does not exist, connection issues)
+
+        print(e)
+        return pd.DataFrame()  # Return an empty DataFrame
+
+
+# gets the raw stations list, unused at the moment due to its size
 def extract_station_list():
     url = 'https://reg.bom.gov.au/climate/data/lists_by_element/stations.txt'
     response = requests.get(url)
@@ -57,7 +121,7 @@ def extract_station_list():
 def upload_es(index_name:str, data:pd.DataFrame) -> bool:
     # request settings:
     url =''
-    if IS_LOCAL:
+    if LOCAL_DEV:
         url = 'https://localhost:9200'
     else:
         url = 'https://elasticsearch-master.elastic.svc.cluster.local:9200'
@@ -87,7 +151,7 @@ def upload_es(index_name:str, data:pd.DataFrame) -> bool:
 
     try:
         response = requests.post(index_url, data='\n'.join(actions) + '\n', headers=headers, auth=auth, verify=verify_ssl)
-        if IS_LOCAL:
+        if LOCAL_DEV:
             print(f'Status Code: {response.status_code}')
             print(response.json())
         else:
@@ -103,7 +167,7 @@ def upload_es(index_name:str, data:pd.DataFrame) -> bool:
 # get latest data from BOM, return as pandas dataframe
 def get_latest_data() -> pd.DataFrame:
 
-    stations_info = extract_station_list()
+    stations_info = dataframe_from_es('bom-station-list', EMPTY_QUERY)
 
     df = pd.DataFrame()
     # ok_stations = pd.DataFrame(columns=stations_info.columns)
@@ -121,22 +185,28 @@ def get_latest_data() -> pd.DataFrame:
 
 
         try:
-            if IS_LOCAL:
+            if LOCAL_DEV:
                 print(url)
             else:
                 current_app.logger.info(url)
             response = requests.get(url)
-            if IS_LOCAL:
+            if LOCAL_DEV:
                 print(response)
                 print("STATUS CODE:")
                 print(response.status_code)
+                print(type(response))
             else:
                 current_app.logger.info(response)
-            data=response.json()
-            
-            
-            new_df = pd.DataFrame.from_dict(data['observations']['data'])
-            df = pd.concat([df, new_df])
+                current_app.logger.info("STATUS CODE:")
+                current_app.logger.info(response.status_code)
+              
+
+            if response:
+                data=response.json()
+                
+                
+                new_df = pd.DataFrame.from_dict(data['observations']['data'])
+                df = pd.concat([df, new_df])
 
             # save the stations that have data to new csv
         #     ok_stations = pd.concat([
@@ -145,8 +215,8 @@ def get_latest_data() -> pd.DataFrame:
         #    )
             
 
-        except requests.RequestException as error:
-            if IS_LOCAL:
+        except Exception as error:
+            if LOCAL_DEV:
                 print(f'Error: {error}')
                 print(station)
                 file1 = open("log.txt", "a")  # append mode
@@ -165,7 +235,7 @@ def get_latest_data() -> pd.DataFrame:
 
 def main():
     print("1")
-    if IS_LOCAL:
+    if LOCAL_DEV:
         file1 = open("log.txt", "w")
         L = ["Error LOG"]
         file1.writelines(L)
@@ -178,13 +248,13 @@ def main():
         status = upload_es(INDEX_NAME, data)
         if status:
             print("UPLOAD SUCCESS")
-            if not IS_LOCAL:
+            if not LOCAL_DEV:
                 current_app.logger.info("UPLOAD SUCCESS")
 
             return "UPLOAD SUCCESS"
         else:
             print("FAILED")
-            if not IS_LOCAL:
+            if not LOCAL_DEV:
                 current_app.logger.info("UPLOAD FAILED")
 
             return "UPLOAD FAILED"

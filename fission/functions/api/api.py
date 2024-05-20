@@ -534,16 +534,14 @@ POST REQUESTS:
 
 '''
 
+
 def post_data():
     data = None
     if not LOCAL_DEV:
         data = request.json
     else:
         # local test data
-        data = {
-            'index_name': 'economy',
-            'data': {}
-        }
+        data = {'index_name': 'bom-station-list', 'data': '{"index": {"_id": "94610"}}\n{"Site name": "PERTH AIRPORT", "Lat": "-31.9275", "Lon": "115.9764", "STA": "WA", "WMO": "94610"}\n{"index": {"_id": "94612"}}\n{"Site name": "PEARCE RAAF", "Lat": "-31.6669", "Lon": "116.0189", "STA": "WA", "WMO": "94612"}\n'}
 
     
     print(data)
@@ -552,17 +550,19 @@ def post_data():
     try:
         index_name = data['index_name']
         payload = data['data']
-        index_url = ES_URL + '/' + index_name + '/_doc'
+        index_url = ES_URL + '/' + index_name + '/_bulk'
         headers = {'Content-Type': 'application/json'}
         auth = (config('ES_USERNAME'), config('ES_PASSWORD'))
         verify_ssl = False
         try:
-            response = requests.post(index_url, json=payload, headers=headers, auth=auth, verify=verify_ssl)
+            response = requests.post(index_url, data=payload, headers=headers, auth=auth, verify=verify_ssl)
             print(f'Status Code: {response.status_code}')
             print(response.json())
             if not LOCAL_DEV:
                 current_app.logger.info(f'{response.json()}')
-            return jsonify({"OK": f"OK"}), 200
+            else:
+                print(response.json())
+            return jsonify({"OK": f"{response.json()}"}), 200
         except requests.exceptions.RequestException as error:
             return jsonify({"error": f"{error}"}), 400
        
@@ -576,7 +576,7 @@ def post_data():
 #     return data
 
 if __name__ == '__main__':
-    print(get_epa_data())
+    print(post_data())
 
 
 '''
