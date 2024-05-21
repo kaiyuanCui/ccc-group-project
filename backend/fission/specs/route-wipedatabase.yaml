@@ -2,21 +2,21 @@ apiVersion: fission.io/v1
 kind: HTTPTrigger
 metadata:
   creationTimestamp: null
-  name: get-pop-data
+  name: wipedatabase
 spec:
-  createingress: true
+  createingress: false
   functionref:
     functionweights: null
-    name: get-pop-data
+    name: wipedatabase
     type: name
   host: ""
   ingressconfig:
     annotations: null
     host: '*'
-    path: /get-pop-data
+    path: /wipedatabase
     tls: ""
   method: ""
   methods:
-  - GET
+  - DELETE
   prefix: ""
-  relativeurl: /get-pop-data
+  relativeurl: /wipedatabase

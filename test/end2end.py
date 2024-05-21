@@ -1,5 +1,4 @@
 '''
-Team 77:
 Name: Hanchun Pan Student ID: 1266219, Email: hanchunp@student.unimelb.edu.au 
 Name: Kaiyuan Cui Student ID: 1266180 , Email: kaicui@student.unimelb.edu.au 
 Name: Runyu Yang Student ID: 1118665, Email: runyuy@student.unimelb.edu.au 
@@ -18,7 +17,7 @@ class HTTPSession:
         return self.session.get(f'{self.base_url}{path}')
 
     def post(self, path, data):
-        return self.session.post(f'{self.base_url}{path}', json=data)
+        return self.session.post(f'{self.base_url}{path}', headers = {'Content-Type': 'application/json'}, json=data)
 
     def put(self, path, data):
         return self.session.put(f'{self.base_url}{path}', json=data)
@@ -31,6 +30,20 @@ class TestEnd2End(unittest.TestCase):
         self.assertEqual(test_request.delete('/wipedatabase').status_code, 200)
         time.sleep(1)
 
+    def test_income(self):
+        self.assertEqual(test_request.get('/get-income-data/year/2010').status_code, 404)
+        wrapped_payload = {
+            'index_name': "test",
+            'data': json.dumps({'index': {'_id': 0}, 'year': 2010}) + '\n'
+        }
+        self.assertEqual(test_request.post('/post-data', wrapped_payload).status_code, 200)
+        self.assertEqual(test_request.get('/get-income-data/year/2010/').status_code, 201)
+
+    
+    
+
+
+#self.assertEqual(test_request.put('/students/1', {'name': 'John Doe', 'courses': '90024'}).status_code, 201)
 if __name__ == '__main__':
     test_request = HTTPSession('http', 'localhost', 9090)
     unittest.main()

@@ -7,3 +7,5 @@ data:
   ES_USERNAME: elastic
   ES_PASSWORD: elastic
   EPA_API_KEY: b3eecb57fa9046c090964ca6691113a0
+  ES_URL: https://elasticsearch-master.elastic.svc.cluster.local:9200
+  ES_TEST_DB: test

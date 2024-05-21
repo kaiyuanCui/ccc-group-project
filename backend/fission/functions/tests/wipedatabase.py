@@ -1,5 +1,4 @@
 '''
-Team 77:
 Name: Hanchun Pan Student ID: 1266219, Email: hanchunp@student.unimelb.edu.au 
 Name: Kaiyuan Cui Student ID: 1266180 , Email: kaicui@student.unimelb.edu.au 
 Name: Runyu Yang Student ID: 1118665, Email: runyuy@student.unimelb.edu.au 
@@ -9,17 +8,26 @@ Name: Zhenghan Zhang Student ID: 1136448, Email: zhenghanz1@student.unimelb.edu.
 
 from flask import request, current_app
 import requests
-from Commons import Commons
+
+def config(k):
+    with open(f'/configs/default/shared-data/{k}', 'r') as f:
+        return f.read()
+def auth():
+    return (config("ES_USERNAME"), config("ES_PASSWORD"))
+
+def search_url():
+    return f'{config("ES_URL")}/{config("ES_TEST_DB")}/_search'
+    
 
 def main():
-    r = requests.delete(f'{Commons.config("ES_URL")}/{Commons.config("ES_TEST_DB")}',
+    requests.delete(f'{config("ES_URL")}/{config("ES_TEST_DB")}',
+        verify=False,
+        auth=auth())
+    r = requests.put(f'{config("ES_URL")}/{config("ES_TEST_DB")}',
             verify=False,
-            auth=Commons.auth())
-    r = requests.put(f'{Commons.config("ES_URL")}/{Commons.config("ES_TEST_DB")}',
-            verify=False,
-            auth=Commons.auth(),
+            auth=auth(),
             headers={'Content-type': 'application/json'},
-            #data=Commons.config("ES_SCHEMA")
+            #data=config("ES_SCHEMA")
         )
 
     return r.json(), r.status_code

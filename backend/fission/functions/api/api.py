@@ -324,7 +324,7 @@ def get_income_data():
         "query": {
             "match_all": {}
         }
-    }
+    }   
 
     # Add year filter to the queries if year is specified
     if year:
@@ -355,8 +355,11 @@ def get_income_data():
 
     
     data_homeless = clean_homeless_data(raw_homeless)
-    data_income = dataframe_from_es('income', query_income)
-   
+    if (test):
+        data_income = dataframe_from_es('test', query_income)
+    else:
+        data_income = dataframe_from_es('income', query_income)
+    print(data_income)
     
     if year and data_income.empty:
         return jsonify({"message": f"No records found for the year {year}."}), 404
