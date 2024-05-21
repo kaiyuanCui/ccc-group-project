@@ -39,6 +39,8 @@ Under fission folder and functions folder in fission includes all packages build
 
 `test`: Include all functions used to test restful api either get and post data API.
 
+`.gitignore`: Ignore files which extension include in this file.
+
 `requirements.txt`: include all package need to run front end.
 
 

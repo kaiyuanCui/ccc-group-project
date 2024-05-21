@@ -1,4 +1,5 @@
 *.zip
 *.csv
+*.geojson
 .DS_Store
 .vscode
