@@ -1,7 +1,6 @@
 import requests
 from elasticsearch8 import Elasticsearch
 import time
-import sys
 
 def config(k):
     with open(f'/configs/default/shared-data/{k}', 'r') as f:
