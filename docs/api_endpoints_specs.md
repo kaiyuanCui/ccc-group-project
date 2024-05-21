@@ -34,7 +34,7 @@ http://127.0.0.1:9090/get-geodata?from-last=true&limit=1
 
 ## EPA
 **Endpoint:** `/get-epa-data`  
-**Description:** Retrieves real-time data harvested from EPA
+**Description:** Retrieves real-time data harvested from EPA  
 **Parameters:**
 - **start:** `yyyy-MM-ddTHH:mm:ss` (add `Z` for UTC time)
 - **end:** `yyyy-MM-ddTHH:mm:ss` (add `Z` for UTC time)
