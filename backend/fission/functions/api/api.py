@@ -601,8 +601,5 @@ curl -X 'POST' \
   "http://127.0.0.1:9090/post-data"  \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
-  -d '{
-  "index": 'economy', 
-  "data": {}
-}'
+  -d '{"index_name": "bom-station-list", "data": "{\\"index\\": {\\"_id\\": \\"94610\\"}}\\n{\\"Site name\\": \\"PERTH AIRPORT\\", \\"Lat\\": \\"-31.9275\\", \\"Lon\\": \\"115.9764\\", \\"STA\\": \\"WA\\", \\"WMO\\": \\"94610\\"}\\n{\\"index\\": {\\"_id\\": \\"94612\\"}}\\n{\\"Site name\\": \\"PEARCE RAAF\\", \\"Lat\\": \\"-31.6669\\", \\"Lon\\": \\"116.0189\\", \\"STA\\": \\"WA\\", \\"WMO\\": \\"94612\\"}\\n"}''
 '''
