@@ -61,9 +61,9 @@ http://127.0.0.1:9090/get-bom-data?start=20240516220000&end=20240517220000
 
 
 ## Upload Data
-**Description:** Uploads any data to ES, given an index name and the data.
 
 **Endpoint:** `/post-data`  
+**Description:** Uploads any data to ES, given an index name and the data.
 
 **Request body:**
 ```json
