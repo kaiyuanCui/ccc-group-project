@@ -24,19 +24,18 @@ Base URL: http://127.0.0.1:9090
 **Description:** Retrieves raw geodata.
 
 **Parameters:**
-- **Parameters:**
   - `limit` (integer): Size of the search, defaults to 999.
   - `from-last` (integer): Makes it start the search from the last `from-last` number of docs.
 
 **Example:**
-```http
+```
 http://127.0.0.1:9090/get-geodata?from-last=true&limit=1
 ```
 
 ## EPA (Filtered)
 **Endpoint:** `/get-epa-data`
 **Description:** Retrieves real-time data harvested from EPA
-- **Parameters:**
+**Parameters:**
 - **start:** `yyyy-MM-ddTHH:mm:ss` (add `Z` for UTC time)
 - **end:** `yyyy-MM-ddTHH:mm:ss` (add `Z` for UTC time)
 - **limit:** integer, size of the search, default to 999

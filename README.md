@@ -14,7 +14,7 @@ Name: Zhenghan Zhang Student ID: 1136448, Email: zhenghanz1@student.unimelb.edu.
 - [Installation](#installation)
 - [Data Sources](#data-sources)
 - [Cloud Conncection](#cloud-connection)
-- [Results](#results)
+- [Results](#result)
 - [Links](#links)
 
 ## Introduction
@@ -99,18 +99,7 @@ The project has revealed several key insights, including the correlation between
 
 ## Links
 ### Restful API
-Australia homeless data by LGA: 'http://localhost:9090/get-homeless-data' \
-Australia Geometry Data by LGA: 'http://localhost:9090/get-geodata?from-last={index}&limit={limit}' \
-Example: 'http://localhost:9090/get-geodata?from-last=100&limit=100'\
-Victoria Crime Data by LGA: 'http://localhost:9090/get-crime-data' \
-Australia Income and Homeless Data by LGA: 'http://localhost:9090/get-income-data/year/<year_you_want>' \
-Example: 'http://localhost:9090/get-income-data/year/2016'\
-Australia Population Data by LGA: 'http://localhost:9090/get-pop-data' \
-BoM Data by Station: 'http://127.0.0.1:9090/get-bom-data?start={start_time}&end={end_time}&from-last={index}&limit={limit}\
-Example: "http://127.0.0.1:9090/get-epa-data?start=2023-05-12T06:00:00Z&end=2024-05-12T07:00:00Z&from-last=true&limit=1"\
-Victoria EPA Data By Station: "http://127.0.0.1:9090/get-epa-data?start={start_time}&end={end_time}"\
-Example: 'http://127.0.0.1:9090/get-bom-data?start=20240516220000&end=20240517220000' \
-Local Upload API: 'http://127.0.0.1:9090/post-data'
+[API Documentations](docs/api_endpoints_specs.md)
 
 ### Youtube Video Link
 Youtube Link: https://youtu.be/Qn8h7B63aP8
