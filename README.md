@@ -28,6 +28,7 @@ Under fission folder and functions folder in fission includes all packages build
 `bom_data`: Catch BoM site information through fission by time trigger and store it in elasticsearch.\
 `epa`: Catch EPA site information through fission by time trigger and store it in elasticsearch.\
 `api`: Include all API functions\
+`tests`: Include elasticsearch connection test
 `log.txt`: This file contains all log messages. \
 `update_api.sh`: Used for updating API Package on Fission. \
 `update_bom.sh`: Used for updating `api` and `bom` Package on Fission.
@@ -36,7 +37,7 @@ Under fission folder and functions folder in fission includes all packages build
 
 `frontend`: Include `front_end.ipynb` for data analysis and visualization.
 
-`tests`: Include all functions used to test restful api.
+`test`: Include all functions used to test restful api either get and post data API.
 
 `requirements.txt`: include all package need to run front end.
 

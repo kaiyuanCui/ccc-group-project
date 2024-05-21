@@ -1,4 +1,5 @@
 '''
+Team 77:
 Name: Hanchun Pan Student ID: 1266219, Email: hanchunp@student.unimelb.edu.au 
 Name: Kaiyuan Cui Student ID: 1266180 , Email: kaicui@student.unimelb.edu.au 
 Name: Runyu Yang Student ID: 1118665, Email: runyuy@student.unimelb.edu.au 
@@ -6,45 +7,79 @@ Name: Yaotian Wang  Student ID: 1503936, Email: yaotwang@student.unimelb.edu.au
 Name: Zhenghan Zhang Student ID: 1136448, Email: zhenghanz1@student.unimelb.edu.au 
 '''
 
-import unittest, requests, json, time
+import unittest
+import requests
 
-class HTTPSession:
-    def __init__(self, protocol, hostname, port):
-        self.session = requests.session()
-        self.base_url = f'{protocol}://{hostname}:{port}'
-
-    def get(self, path):
-        return self.session.get(f'{self.base_url}{path}')
-
-    def post(self, path, data):
-        return self.session.post(f'{self.base_url}{path}', headers = {'Content-Type': 'application/json'}, json=data)
-
-    def put(self, path, data):
-        return self.session.put(f'{self.base_url}{path}', json=data)
-
-    def delete(self, path):
-        return self.session.delete(f'{self.base_url}{path}')
 
 class TestEnd2End(unittest.TestCase):
-    def setUp(self):
-        self.assertEqual(test_request.delete('/wipedatabase').status_code, 200)
-        time.sleep(1)
 
-    def test_income(self):
-        self.assertEqual(test_request.get('/get-income-data/year/2010').status_code, 404)
+    BASE_URL = 'http://127.0.0.1:9090'
+
+    def send_request(self, endpoint, method='GET', params=None, data=None):
+        url = f'{self.BASE_URL}/{endpoint}'
+        response = requests.request(method, url, params=params, json=data)
+        return response
+
+    def assertResponse(self, response, expected_status_code=200):
+        self.assertEqual(response.status_code, expected_status_code, f"Expected status code {expected_status_code}")
+        self.assertIsInstance(response.json(), list, "Expected response to be a list")
+
+    def test_get_income_data(self):
+        ## year from 2014 and 2017 will have data return, else return 404 because no corresponding year
+        year = 2017
+        endpoint = f'get-income-data/year/{year}'
+        response = self.send_request(endpoint)
+        self.assertResponse(response)
+
+    def test_get_crime_data(self):
+        endpoint = 'get-crime-data'
+        response = self.send_request(endpoint)
+        self.assertResponse(response)
+
+    def test_get_pop_data(self):
+        endpoint = 'get-pop-data'
+        response = self.send_request(endpoint)
+        self.assertResponse(response)
+
+    def test_get_geodata(self):
+        endpoint = 'get-geodata'
+        params = {'from-last': True, 'limit': 1}
+        response = self.send_request(endpoint, params=params)
+        self.assertResponse(response)
+
+    def test_get_epa_data(self):
+        endpoint = 'get-epa-data'
+        params = {
+            'start': '2023-05-12T06:00:00Z',
+            'end': '2024-05-12T07:00:00Z',
+            'from-last': True,
+            'limit': 1
+        }
+        response = self.send_request(endpoint, params=params)
+        self.assertResponse(response)
+
+    def test_get_bom_data(self):
+        endpoint = 'get-bom-data'
+        params = {
+            'start': '20240516220000',
+            'end': '20240517220000'
+        }
+        response = self.send_request(endpoint, params=params)
+        self.assertResponse(response)
+
+    def test_get_homeless_data(self):
+        endpoint = 'homeless'
+        response = self.send_request(endpoint)
+        self.assertResponse(response)
+    
+    def post_data(self):
+        endpoint = 'post-data'
+        test_request = self.BASE_URL + '/' + endpoint
         wrapped_payload = {
             'index_name': "test",
-            'data': json.dumps({'index': {'_id': 0}, 'year': 2010}) + '\n'
+            'data': '{"index": {"_id": 0}}\n{"year": 2010})\n{"index": {"_id": 1}}\n{"year": 2011}}\n'
         }
         self.assertEqual(test_request.post('/post-data', wrapped_payload).status_code, 200)
-        self.assertEqual(test_request.get('/get-income-data/year/2010/').status_code, 201)
 
-    
-    
-
-
-#self.assertEqual(test_request.put('/students/1', {'name': 'John Doe', 'courses': '90024'}).status_code, 201)
 if __name__ == '__main__':
-    test_request = HTTPSession('http', 'localhost', 9090)
     unittest.main()
-
