@@ -15,7 +15,7 @@ Base URL: http://127.0.0.1:9090
 **Description:** Retrieves cleaned population data.
 
 ## Homeless
-**Endpoint:** `/get-homeless-data`
+**Endpoint:** `/get-homeless-data`  
 **Description:** Retrieves the preprocessed homeless data.
 
 
@@ -32,8 +32,8 @@ Base URL: http://127.0.0.1:9090
 http://127.0.0.1:9090/get-geodata?from-last=true&limit=1
 ```
 
-## EPA (Filtered)
-**Endpoint:** `/get-epa-data`
+## EPA
+**Endpoint:** `/get-epa-data`  
 **Description:** Retrieves real-time data harvested from EPA
 **Parameters:**
 - **start:** `yyyy-MM-ddTHH:mm:ss` (add `Z` for UTC time)
@@ -42,24 +42,29 @@ http://127.0.0.1:9090/get-geodata?from-last=true&limit=1
 - **from-last:** integer, makes it start the search from the last from-last number of docs
 
 **Example:**
+```
 http://127.0.0.1:9090/get-epa-data?start=2023-05-12T06:00:00Z&end=2024-05-12T07:00:00Z&from-last=true&limit=1
+```
 
 ## BoM 
+**Endpoint:** `/get-bom-data`  
 **Description:** Retrieves real-time data harvested from BoM
-**Endpoint:** `/get-bom-data`
 
 **Parameters:**
 - **start:** `yyyyMMddHHmmss`
 - **end:** `yyyyMMddHHmmss`
 
 **Example:**
+```
 http://127.0.0.1:9090/get-bom-data?start=20240516220000&end=20240517220000
+```
 
 
 ## Upload Data
 **Description:** Uploads any data to ES, given an index name and the data.
 
-**Endpoint:** `/post-data`
+**Endpoint:** `/post-data`  
+
 **Request body:**
 ```json
 {
